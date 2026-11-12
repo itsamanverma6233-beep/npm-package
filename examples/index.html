@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ai-stream-typer Demo</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: #131622;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #232738;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .header {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: var(--accent-glow);
+      color: #a5b4fc;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .chat-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      min-height: 180px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .chat-content {
+      font-size: 16px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 18px;
+      background: var(--accent);
+      margin-left: 2px;
+      vertical-align: middle;
+      border-radius: 2px;
+      animation: blink 0.9s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: #4f46e5;
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #1e2235;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover {
+      background: #282d45;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">npm: ai-stream-typer</div>
+      <h1>ai-stream-typer</h1>
+      <p class="subtitle">Ultra-lightweight streaming typewriter with adaptive pacing & punctuation pauses.</p>
+    </div>
+
+    <div class="chat-box">
+      <div id="output" class="chat-content">Click "Simulate AI Stream" below to see the effect!</div><span class="cursor" id="cursor"></span>
+    </div>
+
+    <div class="controls">
+      <button id="btn-start">✨ Simulate AI Stream</button>
+      <button id="btn-pause" class="secondary">⏸ Pause</button>
+      <button id="btn-flush" class="secondary">⚡ Flush (Skip)</button>
+      <button id="btn-reset" class="secondary">🔄 Reset</button>
+    </div>
+
+    <div class="status-bar">
+      <span>Status: <strong id="status-text" style="color: #6ee7b7;">Ready</strong></span>
+      <span>Zero dependencies • &lt; 1KB</span>
+    </div>
+  </div>
+
+  <script type="module">
+    import { StreamTyper } from "../dist/index.js";
+
+    const outputEl = document.getElementById("output");
+    const statusEl = document.getElementById("status-text");
+    const btnStart = document.getElementById("btn-start");
+    const btnPause = document.getElementById("btn-pause");
+    const btnFlush = document.getElementById("btn-flush");
+    const btnReset = document.getElementById("btn-reset");
+
+    const sampleChunks = [
+      "Hello! ",
+      "I am an AI model streaming responses ",
+      "directly to your browser.\n\n",
+      "Notice how real AI streams arrive in erratic chunks. ",
+      "With `ai-stream-typer`, the user enjoys ",
+      "a silky-smooth, human-like typewriter cadence!\n\n",
+      "It automatically adapts its speed ",
+      "to prevent buffering lag. ✨"
+    ];
+
+    let typer = null;
+    let isPaused = false;
+
+    function initTyper() {
+      outputEl.textContent = "";
+      typer = new StreamTyper({
+        minDelay: 12,
+        maxDelay: 28,
+        punctuationPause: 80,
+        onText: (text) => {
+          outputEl.textContent = text;
+        },
+        onComplete: () => {
+          statusEl.textContent = "Complete";
+          statusEl.style.color = "#60a5fa";
+        }
+      });
+    }
+
+    btnStart.addEventListener("click", () => {
+      initTyper();
+      statusEl.textContent = "Streaming...";
+      statusEl.style.color = "#34d399";
+      btnPause.textContent = "⏸ Pause";
+      isPaused = false;
+
+      let delay = 0;
+      sampleChunks.forEach((chunk) => {
+        delay += Math.floor(Math.random() * 200) + 100;
+        setTimeout(() => {
+          if (typer) typer.feed(chunk);
+        }, delay);
+      });
+
+      setTimeout(() => {
+        if (typer) typer.end();
+      }, delay + 50);
+    });
+
+    btnPause.addEventListener("click", () => {
+      if (!typer) return;
+      if (isPaused) {
+        typer.resume();
+        btnPause.textContent = "⏸ Pause";
+        statusEl.textContent = "Streaming...";
+        isPaused = false;
+      } else {
+        typer.pause();
+        btnPause.textContent = "▶ Resume";
+        statusEl.textContent = "Paused";
+        isPaused = true;
+      }
+    });
+
+    btnFlush.addEventListener("click", () => {
+      if (typer) {
+        typer.flush();
+        statusEl.textContent = "Flushed";
+      }
+    });
+
+    btnReset.addEventListener("click", () => {
+      if (typer) typer.reset();
+      outputEl.textContent = "Click 'Simulate AI Stream' to begin.";
+      statusEl.textContent = "Ready";
+      statusEl.style.color = "#6ee7b7";
+      btnPause.textContent = "⏸ Pause";
+      isPaused = false;
+    });
+  </script>
+</body>
+</html>
