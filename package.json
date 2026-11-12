@@ -48,5 +48,8 @@
     "tsup": "^9.0.0",
     "typescript": "^5.8.2",
     "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "ai-stream-typer": "^0.0.0-stage"
   }
 }

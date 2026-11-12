@@ -197,13 +197,21 @@
 
     let typer = null;
     let isPaused = false;
+    let pendingTimeouts = [];
+    let pendingChunks = [];
+
+    function clearTimeouts() {
+      pendingTimeouts.forEach(clearTimeout);
+      pendingTimeouts = [];
+    }
 
     function initTyper() {
+      clearTimeouts();
       outputEl.textContent = "";
       typer = new StreamTyper({
-        minDelay: 12,
-        maxDelay: 28,
-        punctuationPause: 80,
+        minDelay: 15,
+        maxDelay: 35,
+        punctuationPause: 100,
         onText: (text) => {
           outputEl.textContent = text;
         },
@@ -221,17 +229,19 @@
       btnPause.textContent = "⏸ Pause";
       isPaused = false;
 
+      pendingChunks = [...sampleChunks];
       let delay = 0;
-      sampleChunks.forEach((chunk) => {
-        delay += Math.floor(Math.random() * 200) + 100;
-        setTimeout(() => {
+      sampleChunks.forEach((chunk, index) => {
+        delay += Math.floor(Math.random() * 250) + 150;
+        const tid = setTimeout(() => {
+          pendingChunks.shift();
           if (typer) typer.feed(chunk);
+          if (index === sampleChunks.length - 1 && typer) {
+            typer.end();
+          }
         }, delay);
+        pendingTimeouts.push(tid);
       });
-
-      setTimeout(() => {
-        if (typer) typer.end();
-      }, delay + 50);
     });
 
     btnPause.addEventListener("click", () => {
@@ -250,13 +260,21 @@
     });
 
     btnFlush.addEventListener("click", () => {
-      if (typer) {
-        typer.flush();
-        statusEl.textContent = "Flushed";
+      if (!typer) return;
+
+      clearTimeouts();
+      if (pendingChunks.length > 0) {
+        typer.feed(pendingChunks.join(""));
+        pendingChunks = [];
       }
+      typer.end();
+      typer.flush();
+      statusEl.textContent = "Complete (Flushed)";
+      statusEl.style.color = "#60a5fa";
     });
 
     btnReset.addEventListener("click", () => {
+      clearTimeouts();
       if (typer) typer.reset();
       outputEl.textContent = "Click 'Simulate AI Stream' to begin.";
       statusEl.textContent = "Ready";
