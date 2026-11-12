@@ -3,10 +3,10 @@
 > Ultra-lightweight, zero-dependency streaming text smoother and typewriter effect for AI (LLM) responses.
 
 [![npm version](https://img.shields.io/npm/v/ai-stream-typer.svg?style=flat-square&color=6366f1)](https://www.npmjs.com/package/ai-stream-typer)
-[![license](https://img.shields.io/npm/l/ai-stream-typer.svg?style=flat-square)](https://github.com/)
+[![license](https://img.shields.io/github/license/itsamanverma6233-beep/npm-package?style=flat-square)](https://github.com/itsamanverma6233-beep/npm-package/blob/main/LICENSE)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/ai-stream-typer?style=flat-square&color=10b981)](https://bundlephobia.com/package/ai-stream-typer)
 [![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg?style=flat-square)](https://www.npmjs.com/package/ai-stream-typer)
-[![TypeScript](https://img.shields.io/badge/types-included-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/itsamanverma6233-beep/npm-package/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/itsamanverma6233-beep/npm-package/actions)
 
 ---
 
